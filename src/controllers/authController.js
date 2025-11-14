@@ -2,6 +2,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const crypto = require('crypto');
 
 const JWT_SECRET = 'super-gizli-anahtar-123456789';
 
@@ -111,6 +112,108 @@ exports.login = async (req, res) => {
   } catch (error) {
     res.status(500).json({ 
       error: 'Giriş sırasında hata oluştu' 
+    });
+  }
+};
+
+// Şifre sıfırlama kodu gönder
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ 
+        error: 'Email gerekli' 
+      });
+    }
+
+    // Kullanıcıyı bul
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      // Güvenlik için kullanıcı bulunamasa bile başarılı mesajı dön
+      return res.json({
+        message: 'Eğer email kayıtlıysa, sıfırlama kodu gönderildi',
+        success: true
+      });
+    }
+
+    // Reset token oluştur
+    const resetCode = user.getResetPasswordToken();
+    await user.save();
+
+    // TODO: Gerçek uygulamada burada email gönderilmeli
+    // Şimdilik kodu response'da döndürüyoruz (sadece development için)
+    console.log(`🔐 Password Reset Code for ${email}: ${resetCode}`);
+
+    res.json({
+      message: 'Şifre sıfırlama kodu oluşturuldu',
+      success: true,
+      // UYARI: Production'da bu satır SİLİNMELİ, kod sadece email ile gönderilmeli
+      resetCode: resetCode // Sadece development için
+    });
+
+  } catch (error) {
+    console.error('Forgot password hatası:', error);
+    res.status(500).json({ 
+      error: 'Şifre sıfırlama işlemi başarısız' 
+    });
+  }
+};
+
+// Şifreyi sıfırla
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, resetCode, newPassword } = req.body;
+
+    // Validasyon
+    if (!email || !resetCode || !newPassword) {
+      return res.status(400).json({ 
+        error: 'Tüm alanlar gerekli' 
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ 
+        error: 'Yeni şifre en az 6 karakter olmalı' 
+      });
+    }
+
+    // Kodu hashle
+    const hashedCode = crypto
+      .createHash('sha256')
+      .update(resetCode)
+      .digest('hex');
+
+    // Kullanıcıyı token ve süre ile bul
+    const user = await User.findOne({
+      email,
+      resetPasswordToken: hashedCode,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ 
+        error: 'Geçersiz veya süresi dolmuş kod' 
+      });
+    }
+
+    // Yeni şifreyi hashle ve kaydet
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpire = null;
+    await user.save();
+
+    res.json({
+      message: 'Şifre başarıyla sıfırlandı',
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Reset password hatası:', error);
+    res.status(500).json({ 
+      error: 'Şifre sıfırlama başarısız' 
     });
   }
 };

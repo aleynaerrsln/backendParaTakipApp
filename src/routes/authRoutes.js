@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const authController = require('../controllers/authController');
 
 // Kayıt
 router.post('/register', async (req, res) => {
@@ -124,5 +125,9 @@ router.get('/me', auth, async (req, res) => {
     res.status(500).json({ error: 'Kullanıcı bilgisi alınamadı' });
   }
 });
+router.post('/forgot-password', authController.forgotPassword);
+
+router.post('/reset-password', authController.resetPassword);
+
 
 module.exports = router;
