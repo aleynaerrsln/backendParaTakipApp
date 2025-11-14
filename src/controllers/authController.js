@@ -142,16 +142,28 @@ exports.forgotPassword = async (req, res) => {
     const resetCode = user.getResetPasswordToken();
     await user.save();
 
-    // TODO: Gerçek uygulamada burada email gönderilmeli
-    // Şimdilik kodu response'da döndürüyoruz (sadece development için)
-    console.log(`🔐 Password Reset Code for ${email}: ${resetCode}`);
+    // EMAIL GÖNDER
+    const emailService = require('../services/emailService');
+    const emailResult = await emailService.sendPasswordResetEmail(email, resetCode);
 
-    res.json({
-      message: 'Şifre sıfırlama kodu oluşturuldu',
-      success: true,
-      // UYARI: Production'da bu satır SİLİNMELİ, kod sadece email ile gönderilmeli
-      resetCode: resetCode // Sadece development için
-    });
+    if (emailResult.success) {
+      console.log(`✅ Şifre sıfırlama emaili gönderildi: ${email}`);
+      
+      res.json({
+        message: 'Şifre sıfırlama kodu email adresinize gönderildi',
+        success: true
+      });
+    } else {
+      console.error(`❌ Email gönderilemedi: ${email}`, emailResult.error);
+      
+      // Email gönderilmezse de kod console'da görünsün (development için)
+      console.log(`🔐 Password Reset Code for ${email}: ${resetCode}`);
+      
+      res.status(500).json({
+        error: 'Email gönderilemedi. Lütfen daha sonra tekrar deneyin.',
+        success: false
+      });
+    }
 
   } catch (error) {
     console.error('Forgot password hatası:', error);

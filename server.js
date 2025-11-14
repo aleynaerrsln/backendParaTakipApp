@@ -15,6 +15,12 @@ const MONGODB_URI = 'mongodb+srv://aleynaerarslan2002_db_user:w8FoNXdT21IAF082@c
 // JWT_SECRET'ı global olarak tanımla (middleware'ler için)
 global.JWT_SECRET = 'super-gizli-anahtar-123456789';
 
+// EMAIL AYARLARI - YENİ EKLENEN
+global.EMAIL_CONFIG = {
+  user: 'aleyna.erarslan2002@gmail.com',
+  pass: 'clff iips ktsy oxav'
+};
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -36,7 +42,6 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/budgets', budgetRoutes);
-
 
 // Server başlat
 app.listen(PORT, () => {
