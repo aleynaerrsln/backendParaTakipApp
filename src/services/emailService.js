@@ -1,14 +1,20 @@
-// backend/src/services/emailService.js
+// src/services/emailService.js
 const nodemailer = require('nodemailer');
 
 // Email transporter oluştur
 const createTransporter = () => {
-  return nodemailer.createTransport({
+  return nodemailer.createTransport({  // ← createTransporter DEĞİL, createTransport!
     service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: {
       user: global.EMAIL_CONFIG.user,
       pass: global.EMAIL_CONFIG.pass,
     },
+    tls: {
+      rejectUnauthorized: false
+    }
   });
 };
 

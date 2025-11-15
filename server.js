@@ -18,7 +18,7 @@ global.JWT_SECRET = 'super-gizli-anahtar-123456789';
 // EMAIL AYARLARI - YENİ EKLENEN
 global.EMAIL_CONFIG = {
   user: 'aleyna.erarslan2002@gmail.com',
-  pass: 'clff iips ktsy oxav'
+  pass: 'uvqn qgxf pcxx mwuf'
 };
 
 // Middleware
