@@ -37,11 +37,11 @@ router.post('/register', async (req, res) => {
 
     await user.save();
 
- const token = jwt.sign(
-  { userId: user._id },
-  global.JWT_SECRET,
-  { expiresIn: '7d' }
-);
+    const token = jwt.sign(
+      { userId: user._id },
+      global.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
     console.log('✅ Kullanıcı kaydedildi:', user.email);
 
@@ -84,11 +84,12 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Email veya şifre hatalı' });
     }
 
-const token = jwt.sign(
-  { userId: user._id },
-  global.JWT_SECRET,
-  { expiresIn: '7d' }
-);
+    const token = jwt.sign(
+      { userId: user._id },
+      global.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
     console.log('✅ Giriş başarılı:', user.email);
 
     res.json({
@@ -125,9 +126,18 @@ router.get('/me', auth, async (req, res) => {
     res.status(500).json({ error: 'Kullanıcı bilgisi alınamadı' });
   }
 });
+
+// Şifre sıfırlama kodu gönder
 router.post('/forgot-password', authController.forgotPassword);
 
+// Şifreyi sıfırla
 router.post('/reset-password', authController.resetPassword);
 
+// ✅ YENİ - Şifre değiştir (Auth gerekli)
+router.post('/change-password', auth, authController.changePassword);
+// Profil güncelle (Auth gerekli)
+router.put('/profile', auth, authController.updateProfile);
 
+// Hesabı sil (Auth gerekli)
+router.delete('/account', auth, authController.deleteAccount);
 module.exports = router;

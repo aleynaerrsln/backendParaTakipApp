@@ -229,3 +229,205 @@ exports.resetPassword = async (req, res) => {
     });
   }
 };
+// Şifre değiştir (Authenticated user için)
+exports.changePassword = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    // Validasyon
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ 
+        error: 'Mevcut şifre ve yeni şifre gerekli' 
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ 
+        error: 'Yeni şifre en az 6 karakter olmalı' 
+      });
+    }
+
+    // Kullanıcıyı bul
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ 
+        error: 'Kullanıcı bulunamadı' 
+      });
+    }
+
+    // Mevcut şifreyi kontrol et
+    const validPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ 
+        error: 'Mevcut şifre hatalı' 
+      });
+    }
+
+    // Yeni şifreyi hashle ve kaydet
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({
+      message: 'Şifre başarıyla değiştirildi',
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Change password hatası:', error);
+    res.status(500).json({ 
+      error: 'Şifre değiştirme başarısız' 
+    });
+  }
+};
+// Şifre değiştir (Authenticated user için)
+exports.changePassword = async (req, res) => {
+  try {
+    console.log('🔐 Şifre değiştirme isteği geldi, userId:', req.userId);
+    
+    const userId = req.userId; // ✅ req.user.userId DEĞİL!
+    const { currentPassword, newPassword } = req.body;
+
+    console.log('Request body:', { currentPassword: '***', newPassword: '***' });
+
+    // Validasyon
+    if (!currentPassword || !newPassword) {
+      console.log('❌ Validasyon hatası: Eksik alan');
+      return res.status(400).json({ 
+        error: 'Mevcut şifre ve yeni şifre gerekli' 
+      });
+    }
+
+    if (newPassword.length < 6) {
+      console.log('❌ Validasyon hatası: Şifre çok kısa');
+      return res.status(400).json({ 
+        error: 'Yeni şifre en az 6 karakter olmalı' 
+      });
+    }
+
+    // Kullanıcıyı bul
+    const user = await User.findById(userId);
+    if (!user) {
+      console.log('❌ Kullanıcı bulunamadı:', userId);
+      return res.status(404).json({ 
+        error: 'Kullanıcı bulunamadı' 
+      });
+    }
+
+    console.log('✅ Kullanıcı bulundu:', user.email);
+
+    // Mevcut şifreyi kontrol et
+    const validPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!validPassword) {
+      console.log('❌ Mevcut şifre hatalı');
+      return res.status(401).json({ 
+        error: 'Mevcut şifre hatalı' 
+      });
+    }
+
+    console.log('✅ Mevcut şifre doğru');
+
+    // Yeni şifreyi hashle ve kaydet
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    console.log('✅ Şifre başarıyla değiştirildi');
+
+    res.json({
+      message: 'Şifre başarıyla değiştirildi',
+      success: true
+    });
+
+  } catch (error) {
+    console.error('❌ Change password hatası:', error);
+    res.status(500).json({ 
+      error: 'Şifre değiştirme başarısız: ' + error.message
+    });
+  }
+};
+// Profil güncelle (Authenticated user için)
+exports.updateProfile = async (req, res) => {
+  try {
+    console.log('👤 Profil güncelleme isteği, userId:', req.userId);
+    
+    const userId = req.userId;
+    const { name, email } = req.body;
+
+    // Kullanıcıyı bul
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ 
+        error: 'Kullanıcı bulunamadı' 
+      });
+    }
+
+    // Email değişikliği varsa, başka kullanıcı kullanıyor mu kontrol et
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ 
+          error: 'Bu email zaten kullanılıyor' 
+        });
+      }
+      user.email = email;
+    }
+
+    // İsim güncellemesi
+    if (name) {
+      user.name = name;
+    }
+
+    await user.save();
+
+    console.log('✅ Profil güncellendi:', user.email);
+
+    res.json({
+      message: 'Profil başarıyla güncellendi',
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Update profile hatası:', error);
+    res.status(500).json({ 
+      error: 'Profil güncelleme başarısız: ' + error.message
+    });
+  }
+};
+
+// Hesabı sil (Authenticated user için)
+exports.deleteAccount = async (req, res) => {
+  try {
+    console.log('🗑️ Hesap silme isteği, userId:', req.userId);
+    
+    const userId = req.userId;
+
+    // Kullanıcıyı bul ve sil
+    const user = await User.findByIdAndDelete(userId);
+    
+    if (!user) {
+      return res.status(404).json({ 
+        error: 'Kullanıcı bulunamadı' 
+      });
+    }
+
+    console.log('✅ Hesap silindi:', user.email);
+
+    res.json({
+      message: 'Hesap başarıyla silindi',
+      success: true
+    });
+
+  } catch (error) {
+    console.error('❌ Delete account hatası:', error);
+    res.status(500).json({ 
+      error: 'Hesap silme başarısız: ' + error.message
+    });
+  }
+};

@@ -1,4 +1,4 @@
-// backend/src/middleware/auth.js
+// backend/src/middleware/auth.js - UPDATED
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
@@ -17,9 +17,10 @@ const auth = async (req, res, next) => {
     // Token'ı doğrula
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    // userId'yi mongoose ObjectId'ye çevir
+    // ✅ HER İKİ FORMATI DA SET ET (backward compatibility)
+    req.userId = decoded.userId; // String olarak (authController için)
     req.user = {
-      userId: new mongoose.Types.ObjectId(decoded.userId)
+      userId: new mongoose.Types.ObjectId(decoded.userId) // ObjectId olarak (transactionRoutes için)
     };
 
     next();
